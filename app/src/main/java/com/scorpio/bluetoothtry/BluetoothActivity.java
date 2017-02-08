@@ -23,6 +23,8 @@ import java.util.List;
 
 public class BluetoothActivity extends AppCompatActivity {
 
+    /* TODO: NotificationListenerService https://github.com/kpbird/NotificationListenerService-Example/blob/master/NLSExample/src/main/java/com/kpbird/nlsexample/NLService.java */
+
     BluetoothDevice device;
     Button bEnable, bDisable, bScanDevices;
     private BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -124,7 +126,9 @@ public class BluetoothActivity extends AppCompatActivity {
 
                 if (state == BluetoothDevice.BOND_BONDED && prevState == BluetoothDevice.BOND_BONDING) {
                     Toast.makeText(mainContext,"Paired",Toast.LENGTH_SHORT).show();
-                } /*else if (state == BluetoothDevice.BOND_NONE && prevState == BluetoothDevice.BOND_BONDED){
+                }
+                //Toast to show unpairing of devices
+                /*else if (state == BluetoothDevice.BOND_NONE && prevState == BluetoothDevice.BOND_BONDED){
                     Toast.makeText(mainContext,"Paired",Toast.LENGTH_SHORT);
                 }*/
 
@@ -269,23 +273,6 @@ public class BluetoothActivity extends AppCompatActivity {
         }
     }
 
-    /*private void pairDevice(String INFO)
-    {
-        if (bluetoothAdapter.isEnabled() && bluetoothAdapter != null)
-        {
-            //TODO:Cancel discovery
-            //TODO : Split Info into two name and mac address
-            String MAC = INFO.substring(INFO.length() - 17);
-            IntentFilter filter = new IntentFilter();
-            filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
-            filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-            registerReceiver()
-            Log.d("pairDevice","paring with device"+INFO);
-
-
-        }
-
-    }*/
     private void testCase()
     {
         if(device.getName().equals("Nexus 7"))
