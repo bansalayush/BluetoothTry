@@ -1,12 +1,16 @@
 package com.scorpio.bluetoothtry;
 
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.AsyncTask;
 import android.os.Build;
+import android.os.ParcelUuid;
 import android.os.Process;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -18,14 +22,18 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class BluetoothActivity extends AppCompatActivity {
 
     /* TODO: NotificationListenerService https://github.com/kpbird/NotificationListenerService-Example/blob/master/NLSExample/src/main/java/com/kpbird/nlsexample/NLService.java */
 
-    BluetoothDevice device;
+    BluetoothDevice device,pairedDevice;
     Button bEnable, bDisable, bScanDevices;
     private BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     //private ArrayAdapter mArrayAdapter = new ArrayAdapter(getApplicationContext());
@@ -34,6 +42,10 @@ public class BluetoothActivity extends AppCompatActivity {
     ArrayList<String> alScannedDevices = new ArrayList<>();
     String [] sScannedDevices;
     Context mainContext;
+
+    private OutputStream outputStream;
+    private InputStream inStream;
+    String sendText = "Hello";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +72,12 @@ public class BluetoothActivity extends AppCompatActivity {
     /* button function to scan devices*/
     public void scanDevices(View v) {
         scanForDevices();
+    }
+
+    public  void sendData(View v){
+        new ConnectThread(pairedDevice).run();
+
+
     }
 
     /* Enabling bluetooth on the start of app
@@ -121,9 +139,10 @@ public class BluetoothActivity extends AppCompatActivity {
                 final int state        = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.ERROR);
                 final int prevState    = intent.getIntExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, BluetoothDevice.ERROR);
 
-                if(state==BluetoothDevice.BOND_BONDED)
-                    Toast.makeText(mainContext,"Bonded",Toast.LENGTH_LONG).show();
-
+                if(state==BluetoothDevice.BOND_BONDED) {
+                    Toast.makeText(mainContext, "Bonded", Toast.LENGTH_LONG).show();
+                    pairedDevice = device;
+                }
                 if (state == BluetoothDevice.BOND_BONDED && prevState == BluetoothDevice.BOND_BONDING) {
                     Toast.makeText(mainContext,"Paired",Toast.LENGTH_SHORT).show();
                 }
@@ -150,7 +169,7 @@ public class BluetoothActivity extends AppCompatActivity {
     }*/
 
 
-    /*private class ConnectThread extends Thread {
+    private class ConnectThread extends Thread {
         private final BluetoothSocket mmSocket;
         private final BluetoothDevice mmDevice;
 
@@ -163,7 +182,10 @@ public class BluetoothActivity extends AppCompatActivity {
             try {
                 // Get a BluetoothSocket to connect with the given BluetoothDevice.
                 // MY_UUID is the app's UUID string, also used in the server code.
-                tmp = device.createRfcommSocketToServiceRecord();
+                ParcelUuid uuids[] = pairedDevice.getUuids();
+                System.out.println("Size of parcelUUID's " + uuids.length);
+                System.out.println("UUID is " + uuids[0]+"\n"+uuids[1]+"\n"+uuids[2]+"\n"+uuids[3]+"\n"+uuids[4]+"\n"+uuids[5]);
+                tmp = pairedDevice.createRfcommSocketToServiceRecord(uuids[1].getUuid());
             } catch (IOException e) {
                 Log.e("Connect Thread", "Socket's create() method failed", e);
             }
@@ -190,8 +212,8 @@ public class BluetoothActivity extends AppCompatActivity {
 
             // The connection attempt succeeded. Perform work associated with
             // the connection in a separate thread.
-            *//*manageMyConnectedSocket(mmSocket);*//*
-            Log.d("Connected");
+            //*manageMyConnectedSocket(mmSocket);*//*
+            Log.d("YIPEEEEEE","Connected");
         }
 
         // Closes the client socket and causes the thread to finish.
@@ -202,7 +224,7 @@ public class BluetoothActivity extends AppCompatActivity {
                 Log.e("Connect Thread", "Could not close the client socket", e);
             }
         }
-    }*/
+    }
 
 
 
@@ -245,6 +267,7 @@ public class BluetoothActivity extends AppCompatActivity {
         filter.addAction(BluetoothDevice.EXTRA_DEVICE);
         filter.addAction(BluetoothDevice.EXTRA_PAIRING_VARIANT);
         filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+        //filter.addAction(BluetoothDevice.ACTION_UUID);
         registerReceiver(pReceiver,filter);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             device.createBond();
@@ -275,11 +298,45 @@ public class BluetoothActivity extends AppCompatActivity {
 
     private void testCase()
     {
-        if(device.getName().equals("Nexus 7"))
+        if(device.getName().equals("Scorpio"))
         {
             bluetoothAdapter.cancelDiscovery();
             pairDevice(device);
-
         }
     }
+
+
+    /*class BlueSync extends AsyncTask{
+
+        @Override
+        protected Object doInBackground(Object[] objects) {
+            BluetoothSocket socket = null;
+            ParcelUuid [] uuid = pairedDevice.getUuids();
+            System.out.println("Length of uuid array"+uuid.length);
+            try {
+                bluetoothAdapter.cancelDiscovery();
+                socket = pairedDevice.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805f9b34fb"));
+                socket.connect();
+                inStream = socket.getInputStream();
+                outputStream = socket.getOutputStream();
+                outputStream.write(sendText.getBytes());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Object[] values) {
+            super.onProgressUpdate(values);
+            ProgressDialog progress = new ProgressDialog(BluetoothActivity.this);
+            progress.setMessage("Sending Text");
+            progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            progress.setIndeterminate(true);
+            progress.show();
+
+        }
+
+
+    }*/
 }

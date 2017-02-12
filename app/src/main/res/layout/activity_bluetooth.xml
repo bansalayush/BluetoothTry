@@ -33,6 +33,13 @@
         android:id="@+id/idBScan"
         android:onClick="scanDevices"
         android:text="SCAN FOR DEVICES"/>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/idBSend"
+        android:onClick="sendData"
+        android:text="Send Data"/>
     <Spinner
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
